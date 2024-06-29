@@ -2,13 +2,11 @@
 #include "sdl_utils.h"
 #include <SDL_ttf.h>
 #include <iostream>
-
-const char* FONT_PATH = "G:/CppDev/SDL2_ttf/font/pacifico.ttf";
+#include "globals.h"
+const char* FONT_PATH = "G:/CppDev/SDL2_ttf/font/november.ttf";
 
 // Function to render text using SDL_ttf
 void DrawText(SDL_Renderer* renderer, const std::string& text, int x, int y, SDL_Color color, int fontSize) {
-
-    fontSize += 10;
     // Load a font
     TTF_Font* font = TTF_OpenFont(FONT_PATH, fontSize);
     if (!font) {
@@ -43,21 +41,54 @@ void DrawText(SDL_Renderer* renderer, const std::string& text, int x, int y, SDL
     TTF_CloseFont(font);
 }
 
-
-void DrawScoreboard(SDL_Renderer* renderer, int wins, int streak) {
+void DrawScoreboard(SDL_Renderer* renderer, int wins, int streak, int maxStreak) {
     SDL_Color textColor = { 255, 255, 255, 255 }; // White color for text
+
+    int fontSize = 18; // Increased font size
 
     // Render wins text
     std::string winsText = "Wins: " + std::to_string(wins);
-    DrawText(renderer, winsText, 10, 10, textColor, 14);
+    DrawText(renderer, winsText, 20, 20, textColor, fontSize + 1);
+
+    // Determine streak text and color
+    std::string streakText;
+    SDL_Color streakColor;
+
+    if (streak >= 0) {
+        streakText = "Win Streak: " + std::to_string(streak);
+        streakColor = { 0, 255, 0, 255 }; // Green color for win streak
+    }
+    else {
+        streakText = "Lose Streak: " + std::to_string(-streak);
+        streakColor = { 255, 0, 0, 255 }; // Red color for lose streak
+    }
 
     // Render streak text
-    std::string streakText = "Streak: " + std::to_string(streak);
-    DrawText(renderer, streakText, 10, 40, textColor, 14);
+    DrawText(renderer, streakText, 20, 50, streakColor, fontSize + 1);
+
+    // Render max streak text
+    SDL_Color maxStreakColor = { 255, 165, 0, 255 }; // Orange color for max streak
+    std::string maxStreakText = "Max Streak: " + std::to_string(maxStreak);
+    int maxStreakX = WINDOW_HEIGHT - 200; // Adjust x position to fit the text within the window
+    int maxStreakY = 20;
+
+    DrawText(renderer, maxStreakText, maxStreakX, maxStreakY, maxStreakColor, fontSize + 2);
+
+    // Render instructions at the bottom left
+    std::string instructions1 = "Use arrows to navigate";
+    std::string instructions2 = "Reach the exit to win";
+    std::string instructions3 = "Hold SHIFT for movement boost";
+    int instructionX = 10;
+    int instructionY = WINDOW_HEIGHT - 200; // Adjust y position to fit the instructions within the window
+    int instructionSpacing = 30; // Space between each line of instruction
+
+    DrawText(renderer, instructions1, instructionX, instructionY, textColor, fontSize);
+    DrawText(renderer, instructions2, instructionX, instructionY + instructionSpacing, textColor, fontSize);
+    DrawText(renderer, instructions3, instructionX, instructionY + 2 * instructionSpacing, textColor, fontSize);
 }
 
 
-void DrawMaze(SDL_Renderer* renderer, const std::vector<std::tuple<std::string, std::string, std::string, std::string>>& lines, const SDL_Rect& redDot, int scale, int shift, int wins, int streak) {
+void DrawMaze(SDL_Renderer* renderer, const std::vector<std::tuple<std::string, std::string, std::string, std::string>>& lines, const SDL_Rect& redDot, int scale, int shift, int wins, int streak, int maxStreak) {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // Clear with black color
     SDL_RenderClear(renderer); // Clear the entire renderer
 
@@ -75,7 +106,16 @@ void DrawMaze(SDL_Renderer* renderer, const std::vector<std::tuple<std::string, 
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Set drawing color to red
     SDL_RenderFillRect(renderer, &redDot); // Draw the red dot
 
-    DrawScoreboard(renderer, wins, streak); // Draw scoreboard
+    DrawScoreboard(renderer, wins, streak, maxStreak); // Draw scoreboard and instructions
+
+    // Draw game title at the bottom right
+    SDL_Color greyColor = { 169, 169, 169, 255 }; // Grey color for text
+    std::string gameTitle = "Maze Runner";
+    int textWidth = 150; // Approximate width of the text
+    int textHeight = 20; // Approximate height of the text
+    int titleX = WINDOW_WIDTH - textWidth - 200; // 10 pixels from the right edge
+    int titleY = WINDOW_HEIGHT - textHeight - 150; // 10 pixels from the bottom edge
+    DrawText(renderer, gameTitle, titleX, titleY, greyColor, 40);
 
     SDL_RenderPresent(renderer); // Present the rendered frame
 }

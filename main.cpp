@@ -3,21 +3,13 @@
 #include <SDL.h>
 #include <SDL_ttf.h>
 #include "rectmaze.h"
-#include "bfs.h"
 #include <iostream>
 #include "game.h"
-
-// Global constants
-const int WINDOW_WIDTH = 800;
-const int WINDOW_HEIGHT = 600;
-const int MAZE_WIDTH = 20;
-const int MAZE_HEIGHT = 20;
-const int DISPLAY_SCALE = 18;
-const int SHIFT = 100;
-const int DOT_SIZE = 5;
+#include "globals.h"
 
 int main(int argc, char* argv[]) {
     if (!InitSDL(WINDOW_WIDTH, WINDOW_HEIGHT)) {
+        std::cout << WINDOW_WIDTH << WINDOW_HEIGHT;
         std::cerr << "Failed to initialize SDL" << std::endl;
         return 1;
     }
@@ -39,7 +31,7 @@ int main(int argc, char* argv[]) {
         RunGame(renderer, maze, algorithm);
 
         // Display a prompt to quit or restart the game
-        DrawText(renderer, "Press Q to quit, or any other key to restart", 0.25 * WINDOW_WIDTH, 0.58 * WINDOW_HEIGHT, { 255, 255, 255, 255 }, 14);
+        DrawText(renderer, "Press Q to quit, or any other key to restart", 0.25 * WINDOW_WIDTH, 0.58 * WINDOW_HEIGHT, { 255, 255, 255, 255 }, 24);
         SDL_RenderPresent(renderer);
 
         SDL_Event event;

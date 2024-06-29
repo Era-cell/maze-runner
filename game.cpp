@@ -16,11 +16,12 @@
 
 int wins = 0;
 int streak = 0;
+int maxStreak = 0;
 
 void DisplayMessage(SDL_Renderer* renderer, const std::string& message, float relativeX, float relativeY, SDL_Color color, int delay) {
     int x = static_cast<int>(WINDOW_WIDTH * relativeX);
     int y = static_cast<int>(WINDOW_HEIGHT * relativeY);
-    DrawText(renderer, message, x, y, color, 14);
+    DrawText(renderer, message, x, y, color, 24);
     SDL_RenderPresent(renderer);
     std::this_thread::sleep_for(std::chrono::seconds(delay));
     SDL_RenderClear(renderer); // Clear the renderer after displaying the message
@@ -65,10 +66,10 @@ void RunGame(SDL_Renderer* renderer, Maze* maze, SpanningtreeAlgorithm* algorith
 
         RemoveCubeEdges(redDot, lines, MAZE_WIDTH, MAZE_HEIGHT, SHIFT, DISPLAY_SCALE);
 
-        DrawMaze(renderer, lines, redDot, DISPLAY_SCALE, SHIFT, wins, streak);
+        DrawMaze(renderer, lines, redDot, DISPLAY_SCALE, SHIFT, wins, streak, maxStreak);
         SDL_Color readyColor = { 255, 165, 0, 255 }; // Orange color for "Ready!"
         DisplayMessage(renderer, "Ready!", 0.5, 0.5, readyColor, 1); // Display "Ready!" message for 1 second
-        DrawMaze(renderer, lines, redDot, DISPLAY_SCALE, SHIFT, wins, streak); // Redraw the maze
+        DrawMaze(renderer, lines, redDot, DISPLAY_SCALE, SHIFT, wins, streak, maxStreak); // Redraw the maze
         SDL_Color goColor = { 0, 255, 0, 255 }; // Green color for "Go!"
         DisplayMessage(renderer, "Go!", 0.5, 0.5, goColor, 1);    // Display "Go!" message for 1 second
         return lines;
@@ -84,43 +85,21 @@ void RunGame(SDL_Renderer* renderer, Maze* maze, SpanningtreeAlgorithm* algorith
     bool gameLost = false;
     bool gameWon = false;
 
+    bool boostActive = false;
+
     while (running) {
-        while (SDL_PollEvent(&event)) {
-            switch (event.type) {
-            case SDL_QUIT:
-                running = false;
-                break;
-            case SDL_KEYDOWN:
-                switch (event.key.keysym.sym) {
-                case SDLK_ESCAPE:
-                    running = false;
-                    break;
-                case SDLK_LEFT:
-                    dir = LEFT;
-                    break;
-                case SDLK_RIGHT:
-                    dir = RIGHT;
-                    break;
-                case SDLK_UP:
-                    dir = UP;
-                    break;
-                case SDLK_DOWN:
-                    dir = DOWN;
-                    break;
-                default:
-                    break;
-                }
-                break;
-            default:
-                break;
-            }
+        if (!HandleEvents(event, dir, boostActive)) {
+            running = false;
         }
 
-        MoveRedDot(redDot, dir);
+        MoveRedDot(redDot, dir, boostActive);
 
         if (IsCollision(redDot, lines, SHIFT, DISPLAY_SCALE)) {
             gameLost = true;
-            streak = 0; // Reset streak on loss
+            if (streak > 0) {
+                streak = 0; // Reset streak on loss
+            }
+            streak--; // Decrease streak for lose streak
             running = false;
         }
 
@@ -128,12 +107,18 @@ void RunGame(SDL_Renderer* renderer, Maze* maze, SpanningtreeAlgorithm* algorith
             gameWon = true;
             running = false;
             wins++;
-            streak++;
+            if (streak < 0) {
+                streak = 0; // Reset lose streak on win
+            }
+            streak++; // Increase streak for win streak
+            if (streak > maxStreak) {
+                maxStreak = streak; // Update max streak
+            }
         }
 
         auto now = std::chrono::system_clock::now();
         std::chrono::duration<double> elapsed_seconds = now - lastRegenerateTime;
-        if (elapsed_seconds.count() >= 10) {
+        if (elapsed_seconds.count() >= ELAPSE_TIMER) {
             lines = regenerateMaze();
             lastRegenerateTime = now;
             std::tie(endRow, endColumn) = static_cast<RectangularMaze*>(maze)->GetEndVertexCoordinates();
@@ -141,9 +126,9 @@ void RunGame(SDL_Renderer* renderer, Maze* maze, SpanningtreeAlgorithm* algorith
             endY = endRow * DISPLAY_SCALE + SHIFT;
         }
 
-        DrawMaze(renderer, lines, redDot, DISPLAY_SCALE, SHIFT, wins, streak);
+        DrawMaze(renderer, lines, redDot, DISPLAY_SCALE, SHIFT, wins, streak, maxStreak);
 
-        SDL_Delay(10); // Delay to control the red dot's movement speed
+        SDL_Delay(DELAY); // Delay to control the red dot's movement speed
     }
 
     SDL_Color textColor;
@@ -159,10 +144,10 @@ void RunGame(SDL_Renderer* renderer, Maze* maze, SpanningtreeAlgorithm* algorith
     }
 
     if (gameLost) {
-        DrawText(renderer, "You got caught! Press any key to start again.", 0.25 * WINDOW_WIDTH, 0.5 * WINDOW_HEIGHT, textColor, 14);
+        DrawText(renderer, "You crashed! Press any key to continue.", 0.25 * WINDOW_WIDTH, 0.5 * WINDOW_HEIGHT, textColor, 24);
     }
     else if (gameWon) {
-        DrawText(renderer, "Congratulations! Press any key to start again.", 0.25 * WINDOW_WIDTH, 0.5 * WINDOW_HEIGHT, textColor, 14);
+        DrawText(renderer, "You won!! Press any key to continue.", 0.25 * WINDOW_WIDTH, 0.5 * WINDOW_HEIGHT, textColor, 24);
     }
 
     SDL_RenderPresent(renderer); // Display the end game message

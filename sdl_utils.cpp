@@ -9,8 +9,7 @@ bool InitSDL(int width, int height) {
         std::cerr << "SDL_Init Error: " << SDL_GetError() << std::endl;
         return false;
     }
-
-    window = SDL_CreateWindow("Maze Game", 100, 100, width, height, SDL_WINDOW_SHOWN);
+    window = SDL_CreateWindow("Maze Game", 100, 100, width, height, SDL_WINDOW_OPENGL);
     if (window == nullptr) {
         std::cerr << "SDL_CreateWindow Error: " << SDL_GetError() << std::endl;
         SDL_Quit();
